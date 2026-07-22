@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container">
+  <h1 class="page-title">About MaizeScan</h1>
+  <p class="page-sub">CNN-based maize leaf disease detection — Graduation Project, ULK Data Science 2025/2026.</p>
+</div></section>
+<section class="about-section"><div class="container">
+  <div class="about-grid">
+    <div class="about-card">
+      <h3>Background</h3>
+      <p>Agriculture plays a crucial role in food security in Rwanda and East Africa. Maize is the most widely produced staple crop, yet yield losses from Northern Leaf Blight, Common Rust, and Gray Leaf Spot can reach 30-80% in severe outbreak years. MaizeScan provides farmers and extension officers with an accessible, AI-powered tool for rapid disease identification.</p>
+    </div>
+    <div class="about-card">
+      <h3>Model Architecture</h3>
+      <ul>
+        <li><strong>Base:</strong> VGG16 (ImageNet, 13 conv + 3 FC layers)</li>
+        <li><strong>Head:</strong> GlobalAvgPool → Dense(512,ReLU) → BN → Dropout(0.5) → Dense(256,ReLU) → BN → Dropout(0.3) → Softmax(4)</li>
+        <li><strong>Phase 1:</strong> 30 epochs, frozen VGG16, LR = 1e-4</li>
+        <li><strong>Phase 2:</strong> 25 epochs, block5 unfrozen, LR = 1e-5</li>
+        <li><strong>Preprocessing:</strong> resize 224×224, divide by 255 (rescale=1/255)</li>
+        <li><strong>Optimizer:</strong> Adam | Loss: Categorical Cross-Entropy</li>
+      </ul>
+    </div>
+    <div class="about-card">
+      <h3>Dataset</h3>
+      <div class="dataset-table">
+        <div class="dt-row dt-head"><span>Class</span><span>Pathogen</span><span>Images</span></div>
+        <div class="dt-row"><span>Northern Leaf Blight</span><span>Exserohilum turcicum</span><span>1,150</span></div>
+        <div class="dt-row"><span>Common Rust</span><span>Puccinia sorghi</span><span>1,306</span></div>
+        <div class="dt-row"><span>Gray Leaf Spot</span><span>Cercospora zeae-maydis</span><span>574</span></div>
+        <div class="dt-row"><span>Healthy</span><span>None</span><span>822</span></div>
+        <div class="dt-row dt-total"><span>Total</span><span>PlantVillage + Field</span><span>3,852</span></div>
+      </div>
+    </div>
+    <div class="about-card">
+      <h3>System Design (OOSADM)</h3>
+      <p>Designed using <strong>Object-Oriented System Analysis and Design Methodology</strong> producing four UML artefacts:</p>
+      <ul>
+        <li><strong>Use Case Diagram</strong> — Farmer and Administrator actors</li>
+        <li><strong>Class Diagram</strong> — LeafImage, CNNModel, DiagnosisResult, FlaskApp, DiseaseClass</li>
+        <li><strong>Sequence Diagram</strong> — 11-step leaf upload and diagnosis flow</li>
+        <li><strong>Activity Diagram</strong> — Complete workflow with decision branches</li>
+      </ul>
+    </div>
+    <div class="about-card">
+      <h3>Technology Stack</h3>
+      <ul>
+        <li>Python 3.10+</li>
+        <li>TensorFlow 2.16 / Keras (VGG16 transfer learning)</li>
+        <li>Flask 3.0 (web framework)</li>
+        <li>Pillow (image preprocessing — resize + normalise /255)</li>
+        <li>NumPy (argmax, probability formatting)</li>
+        <li>Google Colab + GPU T4 (training)</li>
+        <li>Gunicorn + Render.com (production deployment)</li>
+      </ul>
+    </div>
+    <div class="about-card about-card-author">
+      <h3>Research Team</h3>
+      <div class="author-row">
+        <div class="author-avatar" aria-hidden="true">BGN</div>
+        <div>
+          <strong>Brice Gaetan Nono Youmbi</strong>
+          <span>Roll No. 202211043</span>
+          <span>BSc Data Science · Year 4 / Day</span>
+        </div>
+      </div>
+      <p style="margin-top:1rem"><strong>Supervisor:</strong> Prof. Jonas Niyitegeka</p>
+      <p><strong>Institution:</strong> Kigali Independent University ULK<br>School of Science and Technology — Dept. Computer Science &amp; Data Science</p>
+      <p><em>Kigali, March 2026</em></p>
+    </div>
+  </div>
+</div></section>
+{% endblock %}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}MaizeScan{% endblock %} — Maize Leaf Disease Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <a href="{{ url_for('index') }}" class="nav-brand" aria-label="MaizeScan home">
+    <span class="brand-icon" aria-hidden="true">🌽</span>
+    <span class="brand-text">Maize<strong>Scan</strong></span>
+  </a>
+  <ul class="nav-links" role="list">
+    <li><a href="{{ url_for('index') }}"    {% if request.endpoint=='index'    %}class="active" aria-current="page"{% endif %}>Detect</a></li>
+    <li><a href="{{ url_for('diseases') }}" {% if request.endpoint=='diseases' %}class="active" aria-current="page"{% endif %}>Diseases</a></li>
+    <li><a href="{{ url_for('about') }}"    {% if request.endpoint=='about'    %}class="active" aria-current="page"{% endif %}>About</a></li>
+  </ul>
+  {% if demo_mode %}<div class="demo-badge" title="No model loaded — demo mode">DEMO</div>{% endif %}
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
+</nav>
+<div class="nav-mobile" id="navMobile" role="menu">
+  <a href="{{ url_for('index') }}" role="menuitem">Detect</a>
+  <a href="{{ url_for('diseases') }}" role="menuitem">Diseases</a>
+  <a href="{{ url_for('about') }}" role="menuitem">About</a>
+</div>
+<main id="main-content">{% block content %}{% endblock %}</main>
+<footer class="footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand"><span>🌽</span> <strong>MaizeScan</strong></div>
+    <p class="footer-desc">
+      CNN-powered maize leaf disease detection using VGG16 transfer learning.<br>
+      <strong>Brice Gaetan Nono Youmbi</strong> · Roll No. 202211043 · ULK Data Science 2025/2026<br>
+      Supervisor: Prof. Jonas Niyitegeka
+    </p>
+    <p class="footer-note">PlantVillage · 3,852 images · 4 classes · VGG16 · 93–99% accuracy</p>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

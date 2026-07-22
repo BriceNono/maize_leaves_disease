@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Diagnosis — {{ response.prediction }}{% endblock %}
+{% block content %}
+<section class="result-section" aria-label="Diagnosis result">
+  <div class="container">
+    <a href="{{ url_for('index') }}" class="back-link" aria-label="Analyse another leaf">← Analyse another leaf</a>
+
+    {% if demo_mode %}<div class="alert alert-info" role="status" style="margin-bottom:1rem"><span class="ai">ℹ</span><span>Demo prediction — add your model to <code>model/vgg16_maize_best.h5</code> for real results.</span></div>{% endif %}
+    {% if response.low_confidence_warning %}<div class="alert alert-warn" role="alert" style="margin-bottom:1rem"><span class="ai">⚠</span><span><strong>Low confidence ({{ response.confidence_pct }})</strong> — the model is uncertain. Try a closer, well-lit photo of the leaf.</span></div>{% endif %}
+
+    <!-- VERDICT CARD -->
+    <div class="verdict-card" style="--dc:{{ response.color }}" role="region" aria-label="Diagnosis verdict">
+      <div class="verdict-left">
+        <div class="verdict-badge" style="background:{{ response.color }}20;border-color:{{ response.color }}55" aria-hidden="true">
+          <span class="verdict-icon">{{ response.icon }}</span>
+        </div>
+        <div class="verdict-info">
+          {% if response.is_healthy %}
+          <div class="verdict-status healthy">✔ No Disease Detected</div>
+          {% else %}
+          <div class="verdict-status diseased">⚠ Disease Detected</div>
+          {% endif %}
+          <h1 class="verdict-name">{{ response.prediction }}</h1>
+          <p class="verdict-sci">{{ response.scientific }}</p>
+          <div class="verdict-tags">
+            <span class="tag tag-sev sev-{{ response.class_key|lower }}">{{ response.severity }} Severity</span>
+            <span class="tag tag-spread">{{ response.spread }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIDENCE SCORE DIAL -->
+      <div class="verdict-right" aria-label="Confidence: {{ response.confidence_pct }}">
+        <div class="conf-dial" role="img" aria-label="Confidence dial: {{ response.confidence_pct }}">
+          <svg viewBox="0 0 120 120" class="dial-svg" aria-hidden="true">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#1a2510" stroke-width="12"/>
+            <circle cx="60" cy="60" r="50" fill="none"
+              stroke="{{ response.color }}" stroke-width="12"
+              stroke-dasharray="{{ response.confidence_bar_pct * 314 // 100 }} 314"
+              stroke-dashoffset="78"
+              stroke-linecap="round"
+              class="dial-fill"/>
+          </svg>
+          <div class="dial-center">
+            <span class="dial-pct" style="color:{{ response.color }}">{{ response.confidence_pct }}</span>
+            <span class="dial-word">Confidence</span>
+          </div>
+        </div>
+        <div class="conf-detail">
+          <div class="conf-badge" style="background:{{ response.confidence_color }}22;border:1px solid {{ response.confidence_color }}55;color:{{ response.confidence_color }}">
+            {{ response.confidence_level }} Confidence
+          </div>
+          <div class="conf-raw">
+            <span class="conf-raw-lbl">Raw score</span>
+            <span class="conf-raw-val">{{ response.confidence }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRID: Image + Probability Bars -->
+    <div class="result-grid">
+      <div class="result-panel" role="region" aria-label="Analysed leaf">
+        <h2 class="panel-title">Analysed Leaf</h2>
+        <div class="leaf-img-wrap">
+          <img src="{{ image_url }}" alt="Uploaded maize leaf" class="leaf-img" loading="lazy"/>
+        </div>
+      </div>
+      <div class="result-panel" role="region" aria-label="Class probabilities">
+        <h2 class="panel-title">All Class Probabilities</h2>
+        <div class="prob-bars">
+          {% for item in response.all_probs %}
+          <div class="prob-row {% if item.key == response.class_key %}prob-winner{% endif %}"
+               role="group" aria-label="{{ item.label }}: {{ item.pct }}">
+            <div class="prob-top">
+              <span class="prob-label">
+                <span aria-hidden="true">{{ item.icon }}</span> {{ item.label }}
+                {% if item.key == response.class_key %}<span class="winner-badge">Predicted</span>{% endif %}
+              </span>
+              <span class="prob-pct" style="color:{{ item.color }}">{{ item.pct }}</span>
+            </div>
+            <div class="prob-track" role="progressbar" aria-valuenow="{{ item.bar_width }}" aria-valuemin="0" aria-valuemax="100">
+              <div class="prob-fill" style="background:{{ item.color }}" data-width="{{ item.bar_width }}"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- DESCRIPTION -->
+    <div class="info-card" role="region" aria-label="Disease description">
+      <h2 class="info-title">What This Means</h2>
+      <p class="info-body">{{ response.description }}</p>
+    </div>
+
+    <!-- ACTIONS + PREVENTION -->
+    <div class="action-grid">
+      <div class="action-card" role="region" aria-label="Treatment actions">
+        <h2 class="action-title" style="color:{{ response.color }}">
+          {% if response.is_healthy %}✓ Monitoring Checklist{% else %}⚡ Immediate Actions Required{% endif %}
+        </h2>
+        <ol class="action-list">
+          {% for action in response.actions %}<li class="action-item">{{ action }}</li>{% endfor %}
+        </ol>
+      </div>
+      <div class="action-card prevention-card" role="region" aria-label="Prevention">
+        <h2 class="action-title">🛡 Prevention &amp; Long-Term Management</h2>
+        <p class="prevention-text">{{ response.prevention }}</p>
+      </div>
+    </div>
+
+    <div class="cta-row">
+      <a href="{{ url_for('index') }}" class="btn btn-primary">Analyse Another Leaf</a>
+      <a href="{{ url_for('diseases') }}" class="btn btn-outline">Learn About Diseases</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.prob-fill').forEach(function(bar){
+    var t=bar.dataset.width+'%';
+    bar.style.width='0%';
+    setTimeout(function(){bar.style.width=t;},150);
+  });
+});
+</script>
+{% endblock %}

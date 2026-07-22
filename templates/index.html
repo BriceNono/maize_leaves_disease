@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Detect Disease{% endblock %}
+{% block content %}
+<section class="hero" aria-label="Hero">
+  <div class="hero-bg" aria-hidden="true"><div class="hero-orb o1"></div><div class="hero-orb o2"></div></div>
+  <div class="hero-inner">
+    <div class="hero-tag">AI-Powered · VGG16 CNN · 93–99% Accuracy</div>
+    <h1 class="hero-title">Detect Maize<br>Leaf Diseases<br><span class="hero-accent">Instantly.</span></h1>
+    <p class="hero-sub">Upload a maize leaf photo and receive an AI diagnosis with confidence score and treatment recommendations in seconds.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-n">3,852</span><span class="stat-l">Training Images</span></div>
+      <div class="stat"><span class="stat-n">4</span><span class="stat-l">Disease Classes</span></div>
+      <div class="stat"><span class="stat-n">99%</span><span class="stat-l">Best Accuracy</span></div>
+      <div class="stat"><span class="stat-n">VGG16</span><span class="stat-l">Architecture</span></div>
+    </div>
+  </div>
+</section>
+<section class="upload-section">
+  <div class="container">
+    {% if error %}<div class="alert alert-error" role="alert"><span class="ai" aria-hidden="true">⚠</span><span>{{ error }}</span></div>{% endif %}
+    {% if demo_mode %}<div class="alert alert-info" role="status"><span class="ai" aria-hidden="true">ℹ</span><span><strong>Demo Mode</strong> — place your trained model at <code>model/vgg16_maize_best.h5</code> to enable real predictions.</span></div>{% endif %}
+    <div class="upload-card">
+      <form action="{{ url_for('predict') }}" method="POST" enctype="multipart/form-data" id="uploadForm" novalidate>
+        <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Drop leaf image here or click to browse">
+          <div class="dropzone-content" id="dropContent">
+            <div class="drop-icon" aria-hidden="true">🌿</div>
+            <p class="drop-title">Drop your leaf image here</p>
+            <p class="drop-sub">or click to browse — JPG / PNG up to 16 MB</p>
+            <button type="button" class="btn btn-primary" id="browseBtn">Choose Image</button>
+          </div>
+          <div class="dropzone-preview hidden" id="previewArea" aria-live="polite">
+            <img id="previewImg" src="#" alt="Selected leaf preview"/>
+            <div class="preview-meta">
+              <span id="previewName" class="preview-name"></span>
+              <button type="button" class="btn-remove" id="clearBtn" aria-label="Remove image">✕ Remove</button>
+            </div>
+          </div>
+          <input type="file" name="leaf_image" id="fileInput" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="file-input" aria-hidden="true" tabindex="-1"/>
+        </div>
+        <div class="classes-row" aria-label="Detectable classes">
+          <span class="class-chip chip-blight">🔴 Northern Leaf Blight</span>
+          <span class="class-chip chip-rust">🟡 Common Rust</span>
+          <span class="class-chip chip-gls">⚫ Gray Leaf Spot</span>
+          <span class="class-chip chip-healthy">🟢 Healthy</span>
+        </div>
+        <button type="submit" class="btn btn-submit" id="submitBtn" disabled aria-disabled="true">
+          <span class="btn-label">Run Disease Detection</span>
+          <span class="btn-loading hidden" aria-live="polite">Analysing&hellip; <span class="spinner" aria-hidden="true"></span></span>
+        </button>
+      </form>
+    </div>
+    <div class="tips-row">
+      <div class="tip"><span class="tip-icon" aria-hidden="true">📷</span><p>Take a close-up photo in good natural lighting</p></div>
+      <div class="tip"><span class="tip-icon" aria-hidden="true">🍃</span><p>Focus on a single leaf with visible symptoms</p></div>
+      <div class="tip"><span class="tip-icon" aria-hidden="true">☀️</span><p>Avoid shadows, blur, or cluttered backgrounds</p></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  var dz=document.getElementById('dropzone'),fi=document.getElementById('fileInput'),
+      bb=document.getElementById('browseBtn'),cb=document.getElementById('clearBtn'),
+      dc=document.getElementById('dropContent'),pa=document.getElementById('previewArea'),
+      pi=document.getElementById('previewImg'),pn=document.getElementById('previewName'),
+      sb=document.getElementById('submitBtn'),fr=document.getElementById('uploadForm'),
+      bl=fr.querySelector('.btn-label'),lo=fr.querySelector('.btn-loading');
+  bb.addEventListener('click',function(){fi.click();});
+  dz.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click();}});
+  fi.addEventListener('change',function(e){if(e.target.files[0])show(e.target.files[0]);});
+  cb.addEventListener('click',function(e){e.stopPropagation();fi.value='';dc.classList.remove('hidden');pa.classList.add('hidden');dz.classList.remove('has-file');sb.disabled=true;sb.setAttribute('aria-disabled','true');});
+  ['dragover','dragenter'].forEach(function(ev){dz.addEventListener(ev,function(e){e.preventDefault();dz.classList.add('drag-over');});});
+  ['dragleave','drop'].forEach(function(ev){dz.addEventListener(ev,function(e){e.preventDefault();dz.classList.remove('drag-over');});});
+  dz.addEventListener('drop',function(e){var f=e.dataTransfer.files[0];if(f){fi.files=e.dataTransfer.files;show(f);}});
+  function show(f){var r=new FileReader();r.onload=function(ev){pi.src=ev.target.result;pi.alt='Selected: '+f.name;pn.textContent=f.name;dc.classList.add('hidden');pa.classList.remove('hidden');dz.classList.add('has-file');sb.disabled=false;sb.setAttribute('aria-disabled','false');};r.readAsDataURL(f);}
+  fr.addEventListener('submit',function(){bl.classList.add('hidden');lo.classList.remove('hidden');sb.disabled=true;});
+})();
+</script>
+{% endblock %}

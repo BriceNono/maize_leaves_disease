@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Disease Guide{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container">
+  <h1 class="page-title">Maize Leaf Disease Guide</h1>
+  <p class="page-sub">Detailed information on all four classes detected by MaizeScan, based on Chapter II literature review.</p>
+</div></section>
+<section class="diseases-section"><div class="container">
+  {% for key in class_order %}{% set d = diseases[key] %}
+  <article class="disease-card" id="{{ key }}" style="--dc:{{ d.color }}" aria-label="{{ d.label }}">
+    <div class="disease-header">
+      <div class="disease-icon-wrap" style="background:{{ d.color }}18" aria-hidden="true"><span class="disease-big-icon">{{ d.icon }}</span></div>
+      <div>
+        <span class="sev-badge sev-{{ key|lower }}">{{ d.severity }} Severity</span>
+        <h2 class="disease-name">{{ d.label }}</h2>
+        <p class="disease-sci">{{ d.scientific }}</p>
+      </div>
+    </div>
+    <p class="disease-desc">{{ d.description }}</p>
+    <p class="disease-spread"><strong>Spread:</strong> {{ d.spread }}</p>
+    <div class="disease-cols">
+      <div><h3 class="dc-title">Recommended Actions</h3><ul class="dc-list">{% for a in d.actions %}<li>{{ a }}</li>{% endfor %}</ul></div>
+      <div><h3 class="dc-title">Prevention</h3><p class="dc-text">{{ d.prevention }}</p></div>
+    </div>
+  </article>
+  {% endfor %}
+</div></section>
+{% endblock %}

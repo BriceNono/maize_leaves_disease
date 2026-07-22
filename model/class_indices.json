@@ -1,0 +1,6 @@
+{
+  "Common_Rust": 0,
+  "Gray_Leaf_Spot": 1,
+  "Healthy": 2,
+  "blight": 3
+}
