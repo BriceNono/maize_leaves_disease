@@ -1,6 +1,1 @@
-{
-  "Common_Rust": 0,
-  "Gray_Leaf_Spot": 1,
-  "Healthy": 2,
-  "blight": 3
-}
+{"Corn___Common_Rust": 0, "Corn___Gray_Leaf_Spot": 1, "Corn___healthy": 2, "Corn___Northern_Leaf_Blight": 3}
