@@ -1,7 +1,7 @@
 services:
   - type: web
     name: maize_leaves_disease
-    env: python
+    runtime: python
     plan: free
     buildCommand: python -m pip install -r requirements.txt && python -m pip show gunicorn
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
