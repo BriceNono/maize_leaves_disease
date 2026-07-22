@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: python -m pip install -r requirements.txt && python -m pip show gunicorn
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+    startCommand: python -m gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
     envVars:
       - key: SECRET_KEY
         generateValue: true
