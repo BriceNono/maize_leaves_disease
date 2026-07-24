@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Image Not Recognised{% endblock %}
+
+{% block content %}
+<section class="invalid-section" aria-label="Image not recognised">
+  <div class="container">
+
+    <a href="{{ url_for('index') }}" class="back-link">← Try another image</a>
+
+    <!-- ── REJECTION CARD ──────────────────────────────────── -->
+    <div class="invalid-card" role="alert" aria-live="assertive">
+
+      <!-- Left: uploaded image -->
+      <div class="invalid-img-wrap">
+        <img src="{{ image_url }}" alt="Uploaded image that was rejected" class="invalid-img" loading="lazy"/>
+        <div class="invalid-img-overlay" aria-hidden="true">
+          <span class="invalid-x">✕</span>
+        </div>
+      </div>
+
+      <!-- Right: message -->
+      <div class="invalid-body">
+        <div class="invalid-icon-row" aria-hidden="true">
+          <span class="invalid-shield">🌿</span>
+          <span class="invalid-cross" aria-hidden="true">✕</span>
+        </div>
+
+        <h1 class="invalid-title">Image Not Recognised</h1>
+
+        <p class="invalid-main">
+          Sorry, the system cannot analyse your image.<br>
+          <strong>Please upload a real maize leaf photo.</strong>
+        </p>
+
+        {% if hint %}
+        <p class="invalid-hint">{{ hint }}</p>
+        {% endif %}
+
+        <!-- What MaizeScan accepts -->
+        <div class="invalid-accepts">
+          <p class="accepts-title">MaizeScan only accepts:</p>
+          <ul class="accepts-list">
+            <li>🌿 Close-up photos of <strong>maize (corn) leaves</strong></li>
+            <li>📷 Clear, in-focus images in good lighting</li>
+            <li>🍃 Single leaf filling most of the frame</li>
+            <li>🌿 Any stage of the four recognised conditions:<br>
+              <span class="accepts-diseases">
+                🔴 Northern Leaf Blight &nbsp;·&nbsp;
+                🟡 Common Rust &nbsp;·&nbsp;
+                ⚫ Gray Leaf Spot &nbsp;·&nbsp;
+                🟢 Healthy
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- What to avoid -->
+        <div class="invalid-avoid">
+          <p class="avoid-title">Common reasons for rejection:</p>
+          <div class="avoid-chips">
+            <span class="avoid-chip">👤 People / selfies</span>
+            <span class="avoid-chip">🐄 Animals</span>
+            <span class="avoid-chip">🌳 Other plant species</span>
+            <span class="avoid-chip">🏠 Buildings / objects</span>
+            <span class="avoid-chip">📄 Paper / documents</span>
+            <span class="avoid-chip">🌍 Soil / ground</span>
+            <span class="avoid-chip">☁️ Sky / blank images</span>
+            <span class="avoid-chip">🌫️ Blurry / too dark</span>
+          </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="invalid-tips">
+          <div class="itip"><span>📷</span><p>Hold your phone 20–30 cm from the leaf</p></div>
+          <div class="itip"><span>☀️</span><p>Use natural daylight — avoid flash</p></div>
+          <div class="itip"><span>🍃</span><p>Keep the leaf in focus and filling the frame</p></div>
+        </div>
+
+        <div class="invalid-cta">
+          <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+            📸 Try Again with a Maize Leaf
+          </a>
+          <a href="{{ url_for('diseases') }}" class="btn btn-outline">
+            See Example Disease Images
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
