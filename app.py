@@ -1,34 +1,24 @@
 """
-app.py — MaizeScan Flask Application
-======================================
-v2: Added MaizeLeafValidator — two-stage gate that runs before the
-    disease CNN to reject non-maize images with a clear user message.
+app.py — MaizeScan Flask Application (with Maize Leaf Validation)
+==================================================================
+NEW: MaizeLeafValidator runs before every prediction.
+     Non-maize images are rejected with a clear user message.
+     Only real maize leaf images proceed to disease classification.
 
 Author : Brice Gaetan Nono Youmbi | Roll No. 202211043
 Supervisor: Prof. Jonas Niyitegeka
 Institution: Kigali Independent University ULK | Data Science 2025/2026
 """
 
-import os
-
-# Reduce TensorFlow memory usage on Render
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-
-import tensorflow as tf
-
-tf.config.threading.set_intra_op_parallelism_threads(1)
-tf.config.threading.set_inter_op_parallelism_threads(1)
-
-import time, logging
-
+import os, time, logging
 from flask import Flask, render_template, request, jsonify, url_for
 from werkzeug.utils import secure_filename
 
 from utils.leaf_image     import LeafImage
 from utils.cnn_model      import CNNModel
 from utils.diagnosis      import DiagnosisResult
+from utils.disease_data   import DISEASE_REGISTRY, load_class_order
 from utils.leaf_validator import MaizeLeafValidator
-from utils.disease_data   import DISEASE_REGISTRY, load_class_order, FALLBACK_CLASS_ORDER
 
 logging.basicConfig(
     level  = logging.INFO,
@@ -36,6 +26,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("FlaskApp")
 
+# ── Flask ─────────────────────────────────────────────────────────
 app = Flask(__name__)
 app.config["SECRET_KEY"]         = os.environ.get("SECRET_KEY", "maizescan-ulk-2026")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
@@ -43,12 +34,12 @@ app.config["UPLOAD_FOLDER"]      = os.path.join("static", "uploads")
 app.config["ALLOWED_EXTENSIONS"] = {"jpg", "jpeg", "png"}
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-# ── Class order from class_indices.json ──────────────────────────
+# ── Class order from class_indices.json (THE FIX) ─────────────────
 CLASS_INDICES_JSON = os.path.join("model", "class_indices.json")
 CLASS_ORDER_KEYS   = load_class_order(CLASS_INDICES_JSON)
 log.info("CLASS_ORDER_KEYS: %s", CLASS_ORDER_KEYS)
 
-# ── Disease CNN model ─────────────────────────────────────────────
+# ── Disease model — loaded once at startup ────────────────────────
 MODEL_PATH = os.path.join("model", "vgg16_maize_best.h5")
 IMG_SIZE   = (224, 224)
 DEMO_MODE  = False
@@ -65,7 +56,7 @@ else:
     log.warning("Model file not found — DEMO MODE")
     DEMO_MODE = True
 
-# ── Maize leaf validator (always active) ─────────────────────────
+# ── Validator — single shared instance ───────────────────────────
 validator = MaizeLeafValidator()
 log.info("MaizeLeafValidator ready.")
 
@@ -83,7 +74,7 @@ def _demo_probs():
         probs[CLASS_ORDER_KEYS.index("Common_Rust")] = 0.85
     else:
         probs[0] = 0.85
-    return np.array(probs, dtype=float)
+    return __import__('numpy').array(probs, dtype=float)
 
 
 # ── Routes ────────────────────────────────────────────────────────
@@ -91,35 +82,37 @@ def _demo_probs():
 def index():
     return render_template("index.html", demo_mode=DEMO_MODE)
 
-
 @app.route("/about")
 def about():
     return render_template("about.html", demo_mode=DEMO_MODE)
-
 
 @app.route("/diseases")
 def diseases():
     return render_template("diseases.html", diseases=DISEASE_REGISTRY,
                            class_order=CLASS_ORDER_KEYS, demo_mode=DEMO_MODE)
 
+@app.route("/rejected")
+def rejected():
+    """Standalone rejection page — also reachable via query param."""
+    reason = request.args.get("reason", "")
+    return render_template("rejected.html", reason=reason, demo_mode=DEMO_MODE)
+
 
 @app.route("/predict", methods=["POST"])
 def predict():
     """
-    Prediction pipeline with maize leaf validation gate:
+    Full prediction pipeline with maize leaf validation gate.
 
-    Step 1 : Validate file (extension, size)
+    Step 1 : File validation (extension, size)
     Step 2 : Save to uploads/
-    Step 3 : LeafImage.from_path() — preprocess
-    Step 4 : MaizeLeafValidator.validate_visual() — Stage 1 gate
-             → if NOT a maize leaf → render invalid.html with clear message
-    Step 5 : CNNModel.predict() — disease inference
-    Step 6 : MaizeLeafValidator.validate_cnn() — Stage 2 entropy gate
-             → if model completely uncertain → render invalid.html
-    Step 7 : DiagnosisResult.build_response()
-    Step 8 : render result.html
+    Step 3 : LeafImage preprocessing
+    Step 4 : Stage-1 colour/texture heuristic validation
+    Step 5 : CNN inference (disease model)
+    Step 6 : Stage-2 CNN confidence gate validation
+    Step 7 : If rejected → render rejected.html
+    Step 8 : Build DiagnosisResult and render result.html
     """
-    # Step 1: file validation
+    # ── Step 1: File check ────────────────────────────────────────
     if "leaf_image" not in request.files:
         return render_template("index.html",
                                error="No file received. Please choose a leaf image.",
@@ -135,67 +128,62 @@ def predict():
                                demo_mode=DEMO_MODE)
 
     try:
-        # Step 2: save
+        # ── Step 2: Save ──────────────────────────────────────────
         safe_name = f"{int(time.time())}_{secure_filename(file.filename)}"
         save_path = os.path.join(app.config["UPLOAD_FOLDER"], safe_name)
         file.save(save_path)
-        image_url = url_for("static", filename=f"uploads/{safe_name}")
+        log.info("Saved upload: %s", safe_name)
 
-        # Step 3: preprocess
+        # ── Step 3: Preprocess ────────────────────────────────────
         leaf = LeafImage.from_path(save_path, img_size=IMG_SIZE)
 
-        # Step 4: Stage 1 — visual validation
-        v1 = validator.validate_visual(leaf)
-        log.info("Stage1 validator: valid=%s code=%s details=%s",
-                 v1.is_valid, v1.reason_code, v1.details)
-        if not v1.is_valid:
-            return render_template(
-                "invalid.html",
-                image_url  = image_url,
-                reason_text= v1.reason_text,
-                hint       = v1.hint,
-                reason_code= v1.reason_code,
-                demo_mode  = DEMO_MODE,
-            )
+        # ── Step 4: Stage-1 heuristic validation (no CNN yet) ────
+        stage1 = validator.validate(leaf._pil_img, probs=None)
+        log.info("Stage-1 validation: valid=%s stage=%s green=%.3f texture=%.4f",
+                 stage1.is_valid, stage1.stage, stage1.green_ratio, stage1.texture_score)
 
-        # Step 5: disease CNN inference
+        # Hard reject: blank, too dark, too bright, no plant colour at all
+        if not stage1.is_valid and stage1.stage == 'heuristic':
+            log.info("REJECTED at Stage 1: %s", stage1.reason)
+            image_url = url_for("static", filename=f"uploads/{safe_name}")
+            return render_template("rejected.html",
+                                   reason=stage1.reason,
+                                   image_url=image_url,
+                                   demo_mode=DEMO_MODE)
+
+        # ── Step 5: CNN inference ─────────────────────────────────
         probs = _demo_probs() if DEMO_MODE else cnn.predict(leaf.img_array)
-
-        # Log raw probs
-        prob_str = " | ".join(
-            f"{k}:{probs[i]:.3f}" for i, k in enumerate(CLASS_ORDER_KEYS)
-        )
+        prob_str = " | ".join(f"{k}:{probs[i]:.3f}"
+                              for i, k in enumerate(CLASS_ORDER_KEYS))
         log.info("Raw probs — %s", prob_str)
 
-        # Step 6: Stage 2 — CNN entropy check
-        v2 = validator.validate_cnn(probs)
-        log.info("Stage2 validator: valid=%s code=%s details=%s",
-                 v2.is_valid, v2.reason_code, v2.details)
-        if not v2.is_valid:
-            return render_template(
-                "invalid.html",
-                image_url  = image_url,
-                reason_text= v2.reason_text,
-                hint       = v2.hint,
-                reason_code= v2.reason_code,
-                demo_mode  = DEMO_MODE,
-            )
+        # ── Step 6: Stage-2 CNN confidence gate ──────────────────
+        stage2 = validator.validate(leaf._pil_img, probs=probs)
+        log.info("Stage-2 validation: valid=%s conf=%.3f", stage2.is_valid, stage2.confidence)
 
-        # Step 7: build full diagnosis
+        if not stage2.is_valid:
+            log.info("REJECTED at Stage 2: %s", stage2.reason)
+            image_url = url_for("static", filename=f"uploads/{safe_name}")
+            return render_template("rejected.html",
+                                   reason=stage2.reason,
+                                   image_url=image_url,
+                                   demo_mode=DEMO_MODE)
+
+        # ── Step 7: Build diagnosis ───────────────────────────────
         result   = DiagnosisResult(probs=probs, class_order=CLASS_ORDER_KEYS,
                                    registry=DISEASE_REGISTRY, leaf_image=leaf)
-        response = result.build_response()
+        response  = result.build_response()
+        image_url = url_for("static", filename=f"uploads/{safe_name}")
 
-        log.info("Prediction: %s | Confidence: %s | Level: %s",
-                 response["prediction"], response["confidence_pct"],
-                 response["confidence_level"])
+        log.info("ACCEPTED — Prediction: %s | Confidence: %s",
+                 response["prediction"], response["confidence_pct"])
 
-        # Step 8: render result
+        # ── Step 8: Render result ─────────────────────────────────
         return render_template("result.html", response=response,
                                image_url=image_url, demo_mode=DEMO_MODE)
 
     except Exception as exc:
-        log.error("Prediction error: %s", exc, exc_info=True)
+        log.error("Prediction pipeline error: %s", exc, exc_info=True)
         return render_template("index.html",
                                error=f"Processing error: {exc}",
                                demo_mode=DEMO_MODE)
@@ -203,7 +191,7 @@ def predict():
 
 @app.route("/api/predict", methods=["POST"])
 def api_predict():
-    """JSON API with validation — same gate as /predict."""
+    """JSON API with same validation gate."""
     if "leaf_image" not in request.files:
         return jsonify({"error": "No file provided"}), 400
     file = request.files["leaf_image"]
@@ -215,34 +203,29 @@ def api_predict():
         file.save(save_path)
         leaf = LeafImage.from_path(save_path, img_size=IMG_SIZE)
 
-        # Stage 1
-        v1 = validator.validate_visual(leaf)
-        if not v1.is_valid:
+        # Stage-1
+        s1 = validator.validate(leaf._pil_img, probs=None)
+        if not s1.is_valid:
             return jsonify({
-                "valid":       False,
-                "reason_code": v1.reason_code,
-                "message":     v1.reason_text,
-                "hint":        v1.hint,
+                "rejected": True,
+                "reason":   s1.reason,
+                "message":  MaizeLeafValidator.REJECTION_MESSAGE,
             }), 422
 
         probs = _demo_probs() if DEMO_MODE else cnn.predict(leaf.img_array)
 
-        # Stage 2
-        v2 = validator.validate_cnn(probs)
-        if not v2.is_valid:
+        # Stage-2
+        s2 = validator.validate(leaf._pil_img, probs=probs)
+        if not s2.is_valid:
             return jsonify({
-                "valid":       False,
-                "reason_code": v2.reason_code,
-                "message":     v2.reason_text,
-                "hint":        v2.hint,
+                "rejected": True,
+                "reason":   s2.reason,
+                "message":  MaizeLeafValidator.REJECTION_MESSAGE,
             }), 422
 
         result = DiagnosisResult(probs=probs, class_order=CLASS_ORDER_KEYS,
                                  registry=DISEASE_REGISTRY, leaf_image=leaf)
-        resp = result.build_response()
-        resp["valid"] = True
-        return jsonify(resp)
-
+        return jsonify(result.build_response())
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
 
@@ -255,7 +238,7 @@ def health():
         "model_loaded":       not DEMO_MODE,
         "class_order":        CLASS_ORDER_KEYS,
         "class_indices_json": os.path.exists(CLASS_INDICES_JSON),
-        "validator":          "MaizeLeafValidator v2 (2-stage)",
+        "validator":          "MaizeLeafValidator v2 (heuristic + CNN gate)",
     })
 
 
@@ -263,7 +246,6 @@ def health():
 def too_large(e):
     return render_template("index.html", error="File too large. Max 16 MB.",
                            demo_mode=DEMO_MODE), 413
-
 @app.errorhandler(404)
 def not_found(e):
     return render_template("index.html", error="Page not found.",
