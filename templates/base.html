@@ -16,11 +16,11 @@
     <span class="brand-text">Maize<strong>Scan</strong></span>
   </a>
   <ul class="nav-links" role="list">
-    <li><a href="{{ url_for('index') }}"    {% if request.endpoint=='index'    %}class="active" aria-current="page"{% endif %}>Detect</a></li>
-    <li><a href="{{ url_for('diseases') }}" {% if request.endpoint=='diseases' %}class="active" aria-current="page"{% endif %}>Diseases</a></li>
-    <li><a href="{{ url_for('about') }}"    {% if request.endpoint=='about'    %}class="active" aria-current="page"{% endif %}>About</a></li>
+    <li><a href="{{ url_for('index') }}"    {% if request.endpoint=='index'    %}class="active"{% endif %}>Detect</a></li>
+    <li><a href="{{ url_for('diseases') }}" {% if request.endpoint=='diseases' %}class="active"{% endif %}>Diseases</a></li>
+    <li><a href="{{ url_for('about') }}"    {% if request.endpoint=='about'    %}class="active"{% endif %}>About</a></li>
   </ul>
-  {% if demo_mode %}<div class="demo-badge" title="No model loaded — demo mode">DEMO</div>{% endif %}
+  {% if demo_mode %}<div class="demo-badge" title="Demo mode active">DEMO</div>{% endif %}
   <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
 </nav>
 <div class="nav-mobile" id="navMobile" role="menu">
