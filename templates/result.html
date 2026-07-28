@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Diagnosis — {{ response.prediction }}{% endblock %}
 {% block content %}
-<section class="result-section">
+<section class="result-section" aria-label="Diagnosis result">
   <div class="container">
     <a href="{{ url_for('index') }}" class="back-link">← Analyse another leaf</a>
     {% if demo_mode %}<div class="alert alert-info" role="status" style="margin-bottom:1rem"><span class="ai">ℹ</span><span>Demo prediction — add your model to <code>model/vgg16_maize_best.h5</code>.</span></div>{% endif %}
