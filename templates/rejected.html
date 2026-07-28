@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Image Not Recognised{% endblock %}
+
+{% block content %}
+<section class="rejected-section" aria-label="Image rejection">
+  <div class="container">
+
+    <!-- Main rejection card -->
+    <div class="rejected-card">
+
+      <!-- Icon -->
+      <div class="rejected-icon-wrap" aria-hidden="true">
+        <div class="rejected-icon-ring">
+          <span class="rejected-icon">🌽</span>
+          <span class="rejected-x">✕</span>
+        </div>
+      </div>
+
+      <!-- Heading -->
+      <h1 class="rejected-title">Image Not Recognised</h1>
+
+      <!-- Primary message -->
+      <p class="rejected-msg">
+        Sorry, the system cannot analyse your image.<br>
+        Please make sure you upload a <strong>real maize leaf photo</strong>.
+      </p>
+
+      <!-- Detailed reason (if available) -->
+      {% if reason %}
+      <div class="rejected-reason" role="alert" aria-label="Rejection reason">
+        <span class="reason-icon" aria-hidden="true">ℹ</span>
+        <span class="reason-text">{{ reason }}</span>
+      </div>
+      {% endif %}
+
+      <!-- Uploaded image (so user can see what they uploaded) -->
+      {% if image_url %}
+      <div class="rejected-img-wrap" aria-label="Your uploaded image">
+        <p class="rejected-img-label">Your uploaded image:</p>
+        <img src="{{ image_url }}" alt="Rejected uploaded image" class="rejected-img" loading="lazy"/>
+      </div>
+      {% endif %}
+
+      <!-- What to do -->
+      <div class="rejected-tips">
+        <h2 class="tips-heading">What the system accepts</h2>
+        <div class="tips-grid">
+          <div class="tip-item tip-good">
+            <span class="tip-mark" aria-hidden="true">✔</span>
+            <div>
+              <strong>Close-up maize leaf photos</strong>
+              <p>Clear photo of a single maize leaf showing the full leaf surface</p>
+            </div>
+          </div>
+          <div class="tip-item tip-good">
+            <span class="tip-mark" aria-hidden="true">✔</span>
+            <div>
+              <strong>Good lighting</strong>
+              <p>Natural daylight or bright indoor light — avoid flash glare</p>
+            </div>
+          </div>
+          <div class="tip-item tip-good">
+            <span class="tip-mark" aria-hidden="true">✔</span>
+            <div>
+              <strong>Any disease stage</strong>
+              <p>Healthy leaves and leaves with Blight, Rust, or Gray Leaf Spot lesions</p>
+            </div>
+          </div>
+          <div class="tip-item tip-bad">
+            <span class="tip-mark bad" aria-hidden="true">✕</span>
+            <div>
+              <strong>Non-maize images</strong>
+              <p>Photos of other plants, animals, people, objects, or documents</p>
+            </div>
+          </div>
+          <div class="tip-item tip-bad">
+            <span class="tip-mark bad" aria-hidden="true">✕</span>
+            <div>
+              <strong>Poor quality photos</strong>
+              <p>Blurry, very dark, overexposed, or heavily compressed images</p>
+            </div>
+          </div>
+          <div class="tip-item tip-bad">
+            <span class="tip-mark bad" aria-hidden="true">✕</span>
+            <div>
+              <strong>Partial or distant shots</strong>
+              <p>Whole-field photos or shots where the leaf covers less than 40% of frame</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disease classes reminder -->
+      <div class="rejected-classes">
+        <p class="classes-label">The system detects these four maize leaf conditions:</p>
+        <div class="classes-row">
+          <span class="class-chip chip-blight">🔴 Northern Leaf Blight</span>
+          <span class="class-chip chip-rust">🟡 Common Rust</span>
+          <span class="class-chip chip-gls">⚫ Gray Leaf Spot</span>
+          <span class="class-chip chip-healthy">🟢 Healthy</span>
+        </div>
+      </div>
+
+      <!-- CTA buttons -->
+      <div class="rejected-cta">
+        <a href="{{ url_for('index') }}" class="btn btn-primary btn-large">
+          📷 Try Again with a Maize Leaf Photo
+        </a>
+        <a href="{{ url_for('diseases') }}" class="btn btn-outline">
+          See Example Disease Images
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}

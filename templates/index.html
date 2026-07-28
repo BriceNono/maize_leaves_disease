@@ -1,12 +1,12 @@
-{% extends "base.html" %}
+% extends "base.html" %}
 {% block title %}Detect Disease{% endblock %}
 {% block content %}
 <section class="hero" aria-label="Hero">
   <div class="hero-bg" aria-hidden="true"><div class="hero-orb o1"></div><div class="hero-orb o2"></div></div>
   <div class="hero-inner">
-    <div class="hero-tag">AI-Powered · VGG16 CNN · 93–99% Accuracy</div>
+    <div class="hero-tag">AI-Powered · VGG16 CNN · 93–99% Accuracy · Maize Leaves Only</div>
     <h1 class="hero-title">Detect Maize<br>Leaf Diseases<br><span class="hero-accent">Instantly.</span></h1>
-    <p class="hero-sub">Upload a maize leaf photo and receive an AI diagnosis with confidence score and treatment recommendations in seconds.</p>
+    <p class="hero-sub">Upload a clear maize leaf photo and receive an AI diagnosis with confidence score and treatment recommendations in seconds. <strong>Maize leaves only</strong> — other images will be automatically rejected.</p>
     <div class="hero-stats">
       <div class="stat"><span class="stat-n">4,192</span><span class="stat-l">Training Images</span></div>
       <div class="stat"><span class="stat-n">4</span><span class="stat-l">Disease Classes</span></div>
@@ -18,13 +18,17 @@
 <section class="upload-section">
   <div class="container">
     {% if error %}<div class="alert alert-error" role="alert"><span class="ai" aria-hidden="true">⚠</span><span>{{ error }}</span></div>{% endif %}
-    {% if demo_mode %}<div class="alert alert-info" role="status"><span class="ai" aria-hidden="true">ℹ</span><span><strong>Demo Mode</strong> — place your trained model at <code>model/vgg16_maize_best.h5</code> to enable real predictions.</span></div>{% endif %}
+    {% if demo_mode %}<div class="alert alert-info" role="status"><span class="ai">ℹ</span><span><strong>Demo Mode</strong> — place your trained model at <code>model/vgg16_maize_best.h5</code> to enable real predictions.</span></div>{% endif %}
     <div class="upload-card">
+      <div class="validator-notice" role="note" aria-label="Validation notice">
+        <span class="vn-icon" aria-hidden="true">🛡</span>
+        <span class="vn-text"><strong>Smart Validation Active</strong> — The system automatically detects and rejects non-maize images. Only clear maize leaf photos will be analysed.</span>
+      </div>
       <form action="{{ url_for('predict') }}" method="POST" enctype="multipart/form-data" id="uploadForm" novalidate>
-        <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Drop leaf image here or click to browse">
+        <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Drop maize leaf image here or click to browse">
           <div class="dropzone-content" id="dropContent">
             <div class="drop-icon" aria-hidden="true">🌿</div>
-            <p class="drop-title">Drop your leaf image here</p>
+            <p class="drop-title">Drop your maize leaf image here</p>
             <p class="drop-sub">or click to browse — JPG / PNG up to 16 MB</p>
             <button type="button" class="btn btn-primary" id="browseBtn">Choose Image</button>
           </div>
@@ -44,15 +48,15 @@
           <span class="class-chip chip-healthy">🟢 Healthy</span>
         </div>
         <button type="submit" class="btn btn-submit" id="submitBtn" disabled aria-disabled="true">
-          <span class="btn-label">Run Disease Detection</span>
-          <span class="btn-loading hidden" aria-live="polite">Analysing&hellip; <span class="spinner" aria-hidden="true"></span></span>
+          <span class="btn-label">Analyse Maize Leaf</span>
+          <span class="btn-loading hidden" aria-live="polite">Validating &amp; Analysing&hellip; <span class="spinner" aria-hidden="true"></span></span>
         </button>
       </form>
     </div>
     <div class="tips-row">
-      <div class="tip"><span class="tip-icon" aria-hidden="true">📷</span><p>Take a close-up photo in good natural lighting</p></div>
-      <div class="tip"><span class="tip-icon" aria-hidden="true">🍃</span><p>Focus on a single leaf with visible symptoms</p></div>
-      <div class="tip"><span class="tip-icon" aria-hidden="true">☀️</span><p>Avoid shadows, blur, or cluttered backgrounds</p></div>
+      <div class="tip"><span class="tip-icon" aria-hidden="true">📷</span><p>Take a close-up photo of a <strong>maize leaf</strong> in good natural lighting</p></div>
+      <div class="tip"><span class="tip-icon" aria-hidden="true">🍃</span><p>Focus on a single leaf — leaf should fill at least <strong>40% of the frame</strong></p></div>
+      <div class="tip"><span class="tip-icon" aria-hidden="true">☀️</span><p>Avoid shadows, blur, or <strong>non-maize objects</strong> in the background</p></div>
     </div>
   </div>
 </section>
